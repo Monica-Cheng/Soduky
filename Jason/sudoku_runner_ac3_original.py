@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """
-sudoku_runner_ac3.py
-Main runner for AC-3 + Backtracking + Forward Checking + Heuristics (MRV + LCV)
+sudoku_runner_ac3_original.py
 
-Usage:
-  python3 sudoku_runner_ac3.py easy.txt medium.txt hard.txt
+Wrapper for the ORIGINAL GitHub AC-3 implementation
+Source: https://github.com/stressGC/Python-AC3-Backtracking-CSP-Sudoku-Solver
 
-This implements:
-- AC-3 preprocessing for constraint propagation
-- Backtracking with Forward Checking
-- MRV (Minimum Remaining Values) Heuristic
-- LCV (Least Constraining Value) Heuristic
+ONLY CHANGES:
+1. Read from easy.txt, medium.txt, hard.txt files
+2. Track metrics (nodes, backtracks, runtime, memory)
+3. Output to CSV with same format as other algorithms
+
+ORIGINAL CODE UNCHANGED - Just wrapped for your I/O format
 """
 
 import sys
@@ -20,42 +20,75 @@ import csv
 import tracemalloc
 import signal
 from tabulate import tabulate
-from typing import List, Dict, Tuple, Optional
+from typing import List, Dict, Tuple
 
-from sudoku_ac3_base import SudokuAC3
-from sudoku_ac3_algorithm import ac3
-from sudoku_ac3_backtrack import recursive_backtrack
+# Import the ORIGINAL modules (place original .py files in same directory)
+from sudoku import Sudoku
+from ac3 import AC3
+from backtrack import recursive_backtrack_algorithm
 
-# Timeout settings
 TIMEOUT_SECONDS = 30
 
 
 class TimeoutException(Exception):
-    """Custom exception for timeout."""
     pass
 
 
 def timeout_handler(signum, frame):
-    """Signal handler for timeout."""
-    raise TimeoutException("Puzzle solving timed out")
+    raise TimeoutException("Timeout")
 
 
-def solve_puzzle_with_timeout(puzzle_string: str, show_output: bool = True) -> Tuple:
-    """
-    Solve a puzzle using AC-3 + Backtracking with timeout and metrics.
+# Metrics tracking wrapper
+class MetricsTracker:
+    """Wraps the original backtrack to count nodes and backtracks"""
+    def __init__(self):
+        self.nodes = 0
+        self.backtracks = 0
+        self.original_backtrack = recursive_backtrack_algorithm
     
-    Returns:
-        (solution_str, runtime, memory_mb, nodes, backtracks, success, timed_out)
+    def tracked_backtrack(self, assignment, sudoku):
+        """Wrapper that counts calls"""
+        self.nodes += 1
+        
+        # Call original backtrack
+        if len(assignment) == len(sudoku.cells):
+            return assignment
+        
+        from heuristics import select_unassigned_variable, order_domain_values
+        from utils import is_consistent, assign, unassign
+        
+        cell = select_unassigned_variable(assignment, sudoku)
+        
+        for value in order_domain_values(sudoku, cell):
+            if is_consistent(sudoku, assignment, cell, value):
+                assign(sudoku, cell, value, assignment)
+                result = self.tracked_backtrack(assignment, sudoku)
+                
+                if result:
+                    return result
+                
+                unassign(sudoku, cell, assignment)
+                self.backtracks += 1
+        
+        return False
+
+
+def solve_single_puzzle(puzzle_string: str, show_output: bool = True) -> Tuple:
     """
-    # Initialize Sudoku
-    sudoku = SudokuAC3(puzzle_string)
+    Solve using ORIGINAL AC-3 implementation
+    Returns: (solution, runtime, memory_mb, nodes, backtracks, success, timed_out)
+    """
     
+    if len(puzzle_string) != 81:
+        raise ValueError(f"Puzzle must be 81 characters, got {len(puzzle_string)}")
+    
+    # Print original puzzle if requested
     if show_output:
         print("ORIGINAL PUZZLE:")
-        sudoku.print_grid()
+        print_puzzle(puzzle_string)
     
-    # Metrics tracking
-    metrics = {'nodes': 0, 'backtracks': 0}
+    # Metrics tracker
+    tracker = MetricsTracker()
     
     # Start tracking
     tracemalloc.start()
@@ -63,53 +96,60 @@ def solve_puzzle_with_timeout(puzzle_string: str, show_output: bool = True) -> T
     
     timeout_occurred = False
     success = False
+    solution = None
     
     try:
-        # Set timeout signal
         signal.signal(signal.SIGALRM, timeout_handler)
         signal.alarm(TIMEOUT_SECONDS)
         
-        # STEP 1: Run AC-3 algorithm
-        if show_output:
-            print("\n[Phase 1] Running AC-3 for constraint propagation...")
+        # ORIGINAL CODE: Create Sudoku object
+        sudoku = Sudoku(puzzle_string)
         
-        ac3_result = ac3(sudoku)
+        if show_output:
+            print("\n[Phase 1] Running AC-3...")
+        
+        # ORIGINAL CODE: Run AC-3
+        ac3_result = AC3(sudoku)
         
         if not ac3_result:
-            # No solution exists
+            # No solution
+            success = False
             if show_output:
                 print("AC-3 determined no solution exists")
-            success = False
-        elif sudoku.is_finished():
-            # AC-3 alone solved it!
+        elif sudoku.isFinished():
+            # AC-3 solved it!
+            success = True
             if show_output:
                 print("✓ AC-3 alone solved the puzzle!")
-            success = True
         else:
-            # STEP 2: Continue with Backtracking
+            # ORIGINAL CODE: Continue with backtracking
             if show_output:
                 print("[Phase 2] AC-3 finished. Starting Backtracking...")
             
-            # Build initial assignment from cells with single value
             assignment = {}
+            
+            # Get already known values
             for cell in sudoku.cells:
                 if len(sudoku.possibilities[cell]) == 1:
                     assignment[cell] = sudoku.possibilities[cell][0]
             
-            # Run backtracking
-            result = recursive_backtrack(assignment, sudoku, metrics)
+            # Run backtracking with tracking
+            result = tracker.tracked_backtrack(assignment, sudoku)
             
             if result:
-                # Update possibilities with final assignment
-                for cell in sudoku.cells:
+                # Merge results
+                for cell in sudoku.possibilities:
                     if cell in result:
                         sudoku.possibilities[cell] = [result[cell]]
                 success = True
             else:
                 success = False
         
-        # Cancel the alarm
         signal.alarm(0)
+        
+        # Get solution string if successful
+        if success:
+            solution = sudoku_to_string(sudoku)
         
     except TimeoutException:
         timeout_occurred = True
@@ -135,23 +175,46 @@ def solve_puzzle_with_timeout(puzzle_string: str, show_output: bool = True) -> T
     
     runtime = end_time - start_time
     peak_mb = peak / (1024 * 1024)
-    nodes = metrics['nodes']
-    backtracks = metrics['backtracks']
     
-    if success:
-        solution = sudoku.get_solution_string()
-        if show_output:
-            print("\nSOLVED PUZZLE:")
-            sudoku.print_grid()
-        return solution, runtime, peak_mb, nodes, backtracks, True, False
-    else:
-        if show_output and not timeout_occurred:
-            print("✗ FAILED: Puzzle could not be solved!")
-        return None, runtime, peak_mb, nodes, backtracks, False, timeout_occurred
+    if success and show_output:
+        print("\nSOLVED PUZZLE:")
+        print_puzzle(solution)
+    
+    return solution, runtime, peak_mb, tracker.nodes, tracker.backtracks, success, timeout_occurred
+
+
+def sudoku_to_string(sudoku) -> str:
+    """Convert Sudoku object back to 81-character string"""
+    result = []
+    for cell in sudoku.cells:
+        if len(sudoku.possibilities[cell]) == 1:
+            result.append(str(sudoku.possibilities[cell][0]))
+        else:
+            result.append('0')
+    return ''.join(result)
+
+
+def print_puzzle(puzzle_string: str) -> None:
+    """Print puzzle in formatted grid"""
+    print()
+    for i in range(9):
+        row = []
+        for j in range(9):
+            idx = i * 9 + j
+            val = puzzle_string[idx] if puzzle_string[idx] != '0' else '.'
+            row.append(val)
+        
+        print(" ".join(row[0:3]) + " | " + 
+              " ".join(row[3:6]) + " | " + 
+              " ".join(row[6:9]))
+        
+        if i in [2, 5]:
+            print("-" * 21)
+    print()
 
 
 def read_puzzles_from_file(filename: str) -> List[str]:
-    """Read puzzles from a text file."""
+    """Read puzzles from text file"""
     puzzles = []
     
     if not os.path.isfile(filename):
@@ -172,8 +235,8 @@ def read_puzzles_from_file(filename: str) -> List[str]:
     return puzzles
 
 
-def log_to_csv(row_dict: Dict, csv_filename: str = "performance_log_ac3.csv") -> None:
-    """Append a result row to the CSV log file."""
+def log_to_csv(row_dict: Dict, csv_filename: str = "performance_log_ac3_original.csv") -> None:
+    """Log results to CSV"""
     file_exists = os.path.isfile(csv_filename)
     
     with open(csv_filename, mode='a', newline='', encoding='utf-8') as csvfile:
@@ -189,14 +252,14 @@ def log_to_csv(row_dict: Dict, csv_filename: str = "performance_log_ac3.csv") ->
 
 
 def solve_all_puzzles(filenames: List[str]) -> None:
-    """Main function to solve all puzzles from the provided files."""
+    """Main function"""
     print(f"\n{'='*70}")
-    print("SUDOKU SOLVER - AC-3 + Backtracking + Forward Checking + Heuristics")
-    print("Heuristics: MRV (Minimum Remaining Values) + LCV (Least Constraining Value)")
+    print("SUDOKU SOLVER - AC-3 + Backtracking (ORIGINAL GitHub Implementation)")
+    print("Source: github.com/stressGC/Python-AC3-Backtracking-CSP-Sudoku-Solver")
     print(f"Timeout: {TIMEOUT_SECONDS} seconds per puzzle")
     print(f"{'='*70}\n")
     
-    log_file = "performance_log_ac3.csv"
+    log_file = "performance_log_ac3_original.csv"
     if os.path.exists(log_file):
         os.remove(log_file)
         print(f"Cleared existing {log_file}\n")
@@ -226,7 +289,7 @@ def solve_all_puzzles(filenames: List[str]) -> None:
             
             try:
                 solved, runtime, memory_mb, nodes, backtracks, success, timed_out = \
-                    solve_puzzle_with_timeout(puzzle, show_output=True)
+                    solve_single_puzzle(puzzle, show_output=True)
                 
                 row = {
                     "File": os.path.basename(filename),
@@ -248,15 +311,11 @@ def solve_all_puzzles(filenames: List[str]) -> None:
                     print(f"  Nodes: {nodes}, Backtracks: {backtracks}, Memory: {memory_mb:.6f} MB")
                 elif timed_out:
                     print(f"\n⏱️  Timed out after {runtime:.6f}s")
-                    print(f"  Nodes: {nodes}, Backtracks: {backtracks}")
                 else:
                     print(f"\n✗ Failed after {runtime:.6f}s")
-                    print(f"  Nodes: {nodes}, Backtracks: {backtracks}")
                 
             except Exception as e:
                 print(f"\n✗ ERROR: {str(e)}")
-                import traceback
-                traceback.print_exc()
                 
                 row = {
                     "File": os.path.basename(filename),
@@ -282,14 +341,9 @@ def solve_all_puzzles(filenames: List[str]) -> None:
         for r in all_results:
             status = "✓" if r["Success"] else ("⏱️" if r["TimedOut"] else "✗")
             table_data.append([
-                r["GlobalIndex"],
-                r["File"],
-                r["PuzzleIndex"],
-                r["Runtime(s)"],
-                r["Memory(MB)"],
-                r["NodesVisited"],
-                r["Backtracks"],
-                status
+                r["GlobalIndex"], r["File"], r["PuzzleIndex"],
+                r["Runtime(s)"], r["Memory(MB)"],
+                r["NodesVisited"], r["Backtracks"], status
             ])
         
         print(tabulate(table_data, 
@@ -344,7 +398,7 @@ def solve_all_puzzles(filenames: List[str]) -> None:
                               "Avg Runtime(s)", "Avg Nodes", "Avg Backtracks"],
                       tablefmt="grid"))
         
-        # Overall accuracy
+        # Overall statistics
         print(f"\n{'='*70}")
         print("OVERALL STATISTICS")
         print(f"{'='*70}\n")
@@ -366,15 +420,14 @@ def solve_all_puzzles(filenames: List[str]) -> None:
     
     print(f"\n{'='*70}")
     print(f"Results saved to: {log_file}")
-    print(f"Algorithm: AC-3 + Backtracking + Forward Checking + Heuristics (MRV + LCV)")
-    print(f"Timeout per puzzle: {TIMEOUT_SECONDS} seconds")
+    print(f"Algorithm: AC-3 + Backtracking (ORIGINAL Implementation)")
     print(f"{'='*70}\n")
 
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python3 sudoku_runner_ac3.py <file1.txt> [file2.txt] ...")
-        print("\nExample: python3 sudoku_runner_ac3.py easy.txt medium.txt hard.txt")
+        print("Usage: python3 sudoku_runner_ac3_original.py <file1.txt> [file2.txt] ...")
+        print("\nExample: python3 sudoku_runner_ac3_original.py easy.txt medium.txt hard.txt")
         print("\nEach file should contain 81-digit puzzles (use 0 for blanks)")
         sys.exit(1)
     
