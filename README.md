@@ -21,3 +21,7 @@ git add .
 git commit -m "Added Jason folder with AC3 solver and implemented .gitignore."
 
 git push
+
+# Activate env
+
+source .venv/bin/activate
