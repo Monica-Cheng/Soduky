@@ -2,7 +2,6 @@
 # Original repository: https://github.com/paccionesawyer/sudokuSolver-CSP
 # License: MIT
 # Modification: simplified version combining Backtracking + Forward Checking only
-# Added: add the metrics and able to save it into csv
 
 from SudokuBoard import SudokuBoard
 import time
@@ -15,16 +14,6 @@ import tracemalloc
 ###############################################################################
 ## Domain Setup and Maintenance
 ###############################################################################
-def parse_arguments():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--board", help="Path to the Sudoku text file", type=str, required=False)
-    args = parser.parse_args()
-    if args.board:
-        return args.board
-    else:
-        return "testing.txt"  # default file if no argument is passed
- 
-
 def set_domains(sudoku_puzzle):
     """Initialize possible domain values for each empty cell."""
     n = 9
@@ -153,61 +142,3 @@ def forward_checking_rec(sudoku_puzzle, heuristic, domains):
     return False
 
 
-# =============================================================
-# NEW: CSV Logging Function
-# =============================================================
-def log_to_csv(row_dict, csv_filename="performance_log_fc.csv"):
-    """Append a result row to the CSV log file."""
-    file_exists = os.path.isfile(csv_filename)
-
-    with open(csv_filename, mode='a', newline='', encoding='utf-8') as csvfile:
-        fieldnames = ["File", "PuzzleIndex", "GlobalIndex", "Runtime(s)",
-                      "Memory(MB)", "NodesVisited", "Backtracks", "Success", "TimedOut"]
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-
-        if not file_exists:
-            writer.writeheader()
-
-        writer.writerow(row_dict)
-        csvfile.flush()
-
-
-# =============================================================
-# Example Run with CSV logging
-# =============================================================
-if __name__ == "__main__":
-
-    board_path = parse_arguments()
-    puzzle = SudokuBoard(open(board_path, "r"))
-
-    # Measure performance
-    start = time.time()
-    tracemalloc.start()
-
-    success = forward_checking(puzzle, minimum_remaining_values)
-
-    end = time.time()
-    current, peak = tracemalloc.get_traced_memory()
-    tracemalloc.stop()
-
-    runtime = end - start
-    memory_mb = peak / (1024 * 1024)
-
-    # Print solved board
-    puzzle.print_board()
-
-    # Prepare and log results
-    row = {
-        "File": os.path.basename(board_path),
-        "PuzzleIndex": 1,
-        "GlobalIndex": 1,
-        "Runtime(s)": f"{runtime:.6f}",
-        "Memory(MB)": f"{memory_mb:.6f}",
-        "NodesVisited": puzzle.unique_states,
-        "Backtracks": puzzle.backtracks,
-        "Success": success,
-        "TimedOut": False
-    }
-
-    log_to_csv(row)
-    print("Results saved to performance_log_fc.csv")

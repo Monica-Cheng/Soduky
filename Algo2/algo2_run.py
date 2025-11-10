@@ -1,18 +1,3 @@
-#!/usr/bin/env python3
-"""
-sudoku_runner_fc_minimal.py
-
-Wrapper for Backtracking + Forward Checking + MRV implementation
-Source: https://github.com/paccionesawyer/sudokuSolver-CSP
-
-Algorithm: Backtracking + Forward Checking + MRV Heuristic
-
-Cross-platform version (Windows + macOS + Linux)
-✔ Replaced signal.SIGALRM with threading.Timer
-✔ Same CSV + statistics logic
-✔ No changes to solving algorithm
-"""
-
 import sys
 import os
 import time
@@ -94,7 +79,7 @@ def solve_single_puzzle(puzzle_string: str, show_output: bool = True) -> Tuple:
     except Exception as e:
         success = False
         if show_output:
-            print(f"\n⚠️ ERROR: {str(e)}")
+            print(f"\n ERROR: {str(e)}")
             import traceback
             traceback.print_exc()
     finally:
@@ -116,7 +101,7 @@ def solve_single_puzzle(puzzle_string: str, show_output: bool = True) -> Tuple:
     if timeout_occurred:
         success = False
         if show_output:
-            print(f"\n⏱️ TIMEOUT: Exceeded {TIMEOUT_SECONDS} seconds")
+            print(f"\n TIMEOUT: Exceeded {TIMEOUT_SECONDS} seconds")
 
     return solution, runtime, peak_mb, nodes, backtracks, success, timeout_occurred
 
@@ -150,13 +135,13 @@ def read_puzzles_from_file(filename: str) -> List[str]:
     """Read puzzles from text file"""
     puzzles = []
     if not os.path.isfile(filename):
-        print(f"⚠️ File not found: {filename}")
+        print(f" File not found: {filename}")
         return puzzles
 
     with open(filename, "r", encoding="utf-8") as f:
         digits_only = "".join(ch for ch in f.read() if ch.isdigit())
         if len(digits_only) % 81 != 0:
-            print(f"⚠️ {filename} has {len(digits_only)} digits, not multiple of 81")
+            print(f" {filename} has {len(digits_only)} digits, not multiple of 81")
         for i in range(0, len(digits_only), 81):
             if i + 81 <= len(digits_only):
                 puzzles.append(digits_only[i:i+81])
@@ -237,7 +222,7 @@ def solve_all_puzzles(filenames: List[str]) -> None:
                     print(f"✗ Failed after {runtime:.6f}s | Nodes: {nodes}, Backtracks: {backtracks}")
 
             except Exception as e:
-                print(f"⚠️ ERROR: {str(e)}")
+                print(f" ERROR: {str(e)}")
                 import traceback
                 traceback.print_exc()
                 row = {

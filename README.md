@@ -2,25 +2,19 @@
 
 # Algorithm 1: Basic Backtracking (mon)
 
-python3 sudoku_runner.py easy.txt medium.txt hard.txt
+python3 algo1_run.py easy.txt medium.txt hard.txt
 
-python3 mon_updated.py easy.txt medium.txt hard.txt
+# Algorithm 2: Backtracking + Forward checking + MRV (Jasmine)
 
-# Algorithm 2: Forward Checking + Heuristics (jas)
-
-python3 sudoku_runner_forward_checking.py easy.txt medium.txt hard.txt
-
-python3 sudoku_runner_fc_minimal.py easy.txt medium.txt hard.txt
+python3 algo2_run.py easy.txt medium.txt hard.txt
 
 # Algorithm 3: AC-3 + FC + Heuristics (Jason)
 
-python3 sudoku_runner_ac3_original.py easy.txt medium.txt hard.txt
+python3 algo3_run.py easy.txt medium.txt hard.txt
 
-python3 jason_updated.py easy.txt medium.txt hard.txt
+# Algorithm 4: MIN CONFLICT (CINDY)
 
-# Algorithm 4: Cindy
-
-python3 cindy_updated.py easy.txt medium.txt hard.txt
+python3 algo4_run.py easy.txt medium.txt hard.txt
 
 # To run cnn
 
@@ -44,8 +38,14 @@ mon: https://github.com/CharKeaney/sudoku-solver/blob/master/sudosolver.py
 
 cindy:
 
-Jason:
+1. https://doi.org/10.1016/0004-3702(92)90007-K
+
+2. https://aima.cs.berkeley.edu/
+
+3. https://github.com/kushjain/Min-Conflicts
+
+Jason: https://github.com/stressGC/Python-AC3-Backtracking-CSP-Sudoku-Solver/tree/master
 
 Jas2: https://github.com/paccionesawyer/sudokuSolver-CSP
 
-CNN:
+CNN: https://github.com/rg1990/cv-sudoku-solver
