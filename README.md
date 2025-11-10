@@ -20,11 +20,15 @@ python3 algo4_run.py easy.txt medium.txt hard.txt
 
 python sudoku_main.py --img_fpath "data/sudoku_images/2.jpg" --output_path "recognized_sudoku.txt"
 
+# To run oct
+
+python3 sudoku-ocr-Tesseract.py --image images/test.jpg --out recognized_sudoku.txt
+
 # To commit to git hub
 
 git add .
 
-git commit -m "Added Jason folder with AC3 solver and implemented .gitignore."
+git commit -m "Added "
 
 git push
 
