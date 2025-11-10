@@ -1,10 +1,8 @@
-# Python environment and cache files
 .venv/
 __pycache__/
 *.pyc
-
-# Operating System files (like the one Mac creates)
-.DS_Store
-
-# Log files created during your runs
+.DS_Store 
 *.csv
+*.h5
+*.keras
+*.pt

@@ -10,7 +10,7 @@ from tensorflow.keras.datasets import mnist
 
 
 # ============================================================
-# 1️⃣ Load MNIST (digits 1–9 only)
+# 1️ Load MNIST (digits 1–9 only)
 # ============================================================
 def load_mnist_data():
     (x_train, y_train), (x_test, y_test) = mnist.load_data()
@@ -35,12 +35,12 @@ def load_mnist_data():
     y_train = to_categorical(y_train, 9)
     y_test = to_categorical(y_test, 9)
 
-    print(f"✅ Loaded MNIST digits: {x_train.shape[0]} train, {x_test.shape[0]} test")
+    print(f" Loaded MNIST digits: {x_train.shape[0]} train, {x_test.shape[0]} test")
     return x_train, y_train, x_test, y_test
 
 
 # ============================================================
-# 2️⃣ Load FONT dataset (supports both “1–9” and “Sample002–010” folders)
+# 2️ Load FONT dataset (supports both “1–9” and “Sample002–010” folders)
 # ============================================================
 def load_font_data(data_dir="/content/cv-sudoku-solver/data/digit_images"):
     x, y = [], []
@@ -48,28 +48,28 @@ def load_font_data(data_dir="/content/cv-sudoku-solver/data/digit_images"):
     # Detect folder naming pattern automatically
     subfolders = sorted(glob.glob(os.path.join(data_dir, "*")))
     if not subfolders:
-        raise ValueError(f"❌ No subfolders found in {data_dir}")
+        raise ValueError(f" No subfolders found in {data_dir}")
 
     # Check if folders are named "1", "2", ..., or "Sample002" etc.
     if "Sample002" in subfolders[0]:
         pattern_type = "sample"
-        print("📁 Detected SampleXXX folder pattern")
+        print(" Detected SampleXXX folder pattern")
         folder_mapping = [(i + 1, f"Sample{(i + 2):03d}") for i in range(9)]
     else:
         pattern_type = "numeric"
-        print("📁 Detected numeric folder pattern (1–9)")
+        print(" Detected numeric folder pattern (1–9)")
         folder_mapping = [(i + 1, str(i + 1)) for i in range(9)]
 
     # Load images
     for digit, folder_name in folder_mapping:
         folder = os.path.join(data_dir, folder_name)
         if not os.path.exists(folder):
-            print(f"⚠️ Missing folder: {folder}")
+            print(f" Missing folder: {folder}")
             continue
 
         img_paths = glob.glob(os.path.join(folder, "*.png"))
         if len(img_paths) == 0:
-            print(f"⚠️ No PNGs in {folder}")
+            print(f" No PNGs in {folder}")
             continue
 
         for img_path in img_paths:
@@ -82,22 +82,22 @@ def load_font_data(data_dir="/content/cv-sudoku-solver/data/digit_images"):
             x.append(img)
             y.append(digit - 1)
 
-        print(f"✅ Loaded {len(img_paths)} images for digit {digit} ({folder_name})")
+        print(f" Loaded {len(img_paths)} images for digit {digit} ({folder_name})")
 
     if len(x) == 0:
-        raise ValueError(f"❌ No images found in {data_dir}")
+        raise ValueError(f"No images found in {data_dir}")
 
     x = np.array(x)
     x = np.expand_dims(x, -1)
     y = np.array(y)
     y = to_categorical(y, 9)
 
-    print(f"✅ Total font digits loaded: {x.shape[0]}")
+    print(f" Total font digits loaded: {x.shape[0]}")
     return x, y
 
 
 # ============================================================
-# 3️⃣ Build CNN
+# 3️ Build CNN
 # ============================================================
 def build_model():
     model = Sequential([
@@ -115,7 +115,7 @@ def build_model():
 
 
 # ============================================================
-# 4️⃣ Train and Save
+# 4️ Train and Save
 # ============================================================
 def train_model():
     x_train_m, y_train_m, x_test_m, y_test_m = load_mnist_data()
@@ -132,7 +132,7 @@ def train_model():
     x_combined = x_combined[indices]
     y_combined = y_combined[indices]
 
-    print(f"✅ Combined dataset shape: {x_combined.shape}")
+    print(f"Combined dataset shape: {x_combined.shape}")
 
     model = build_model()
     model.fit(
@@ -147,11 +147,11 @@ def train_model():
     os.makedirs("/content/cv-sudoku-solver/models", exist_ok=True)
     model_path = "/content/cv-sudoku-solver/models/model_fonts_mnist.keras"
     model.save(model_path)
-    print(f"✅ Model saved to {model_path}")
+    print(f"Model saved to {model_path}")
 
 
 # ============================================================
-# 5️⃣ Run script
+# 5️ Run script
 # ============================================================
 if __name__ == "__main__":
     train_model()

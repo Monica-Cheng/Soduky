@@ -42,15 +42,22 @@ def solve_sudoku_puzzle(args):
     scanner = SudokuSolver(board=grid_array)
     scanner.print_board()
 
-    output_path = args['output_path']  # ✅ Use the command-line argument here
+    # New file writing code for sudoku_main.py
+    # --- Start of Replacement Block ---
+    output_path = args['output_path']
+    # Flatten the 9x9 grid_array into a single list of 81 digits
+    flattened_grid = grid_array.flatten()
+    
+    # Convert all numbers to strings and join them without any spaces
+    # Example: [1, 2, 3, 0] becomes "1230"
+    single_line_content = "".join(str(x) for x in flattened_grid)
+    
+    # Write the single line to the output file
     with open(output_path, "w") as f:
-        for i, row in enumerate(grid_array):
-            line = " ".join(str(x) for x in row)
-            f.write(line + "\n")
-            if (i + 1) % 3 == 0 and i != 8:
-                f.write("- - - - - - - - - - -\n")
-
-    print(f"\n Saved recognized grid to {output_path}")
+        f.write(single_line_content)
+        
+    print(f"\n Saved recognized grid to {output_path} (81 digits, single line)")
+    # --- End of Replacement Block ---
 
 if __name__ == "__main__":
     # Construct an argument parser and parse the arguments
