@@ -18,7 +18,7 @@ python3 algo4_run.py easy.txt medium.txt hard.txt
 
 # To run cnn
 
-python sudoku_main.py --img_fpath "data/sudoku_images/22.jpg" --model_fpath "models/model_fonts_mnist.keras" --output_path "recognized_sudoku.txt"
+python sudoku_main.py --img_fpath "data/sudoku_images/2.jpg" --output_path "recognized_sudoku.txt"
 
 # To commit to git hub
 
@@ -49,3 +49,6 @@ Jason: https://github.com/stressGC/Python-AC3-Backtracking-CSP-Sudoku-Solver/tre
 Jas2: https://github.com/paccionesawyer/sudokuSolver-CSP
 
 CNN: https://github.com/rg1990/cv-sudoku-solver
+
+Run Combine File:
+python sudoku_integrated_solver.py --image external1.jpg
