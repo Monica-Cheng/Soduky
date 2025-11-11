@@ -1,40 +1,32 @@
-# Soduky
+# Command to run algorithims
 
 # Algorithm 1: Basic Backtracking (mon)
 
+cd algo1
 python3 algo1_run.py easy.txt medium.txt hard.txt
 
 # Algorithm 2: Backtracking + Forward checking + MRV (Jasmine)
 
+cd algo2
 python3 algo2_run.py easy.txt medium.txt hard.txt
 
 # Algorithm 3: AC-3 + FC + Heuristics (Jason)
 
+cd algo3
 python3 algo3_run.py easy.txt medium.txt hard.txt
 
 # Algorithm 4: MIN CONFLICT (CINDY)
 
+cd algo4
 python3 algo4_run.py easy.txt medium.txt hard.txt
 
 # To run cnn
 
 python sudoku_main.py --img_fpath "data/sudoku_images/2.jpg" --output_path "recognized_sudoku.txt"
 
-# To run oct
+# To run ocr
 
 python3 sudoku-ocr-Tesseract.py --image images/test.jpg --out recognized_sudoku.txt
-
-# To commit to git hub
-
-git add .
-
-git commit -m "Added "
-
-git push
-
-# Activate env
-
-source .venv/bin/activate
 
 # Git Hub sources
 
