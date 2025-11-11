@@ -10,7 +10,7 @@ python3 algo2_run.py easy.txt medium.txt hard.txt
 
 # Algorithm 3: AC-3 + FC + Heuristics (Jason)
 
-python3 algo2_run.py easy.txt medium.txt hard.txt
+python3 algo3_run.py easy.txt medium.txt hard.txt
 
 # Algorithm 4: MIN CONFLICT (CINDY)
 
@@ -53,6 +53,7 @@ Jason: https://github.com/stressGC/Python-AC3-Backtracking-CSP-Sudoku-Solver/tre
 Jas2: https://github.com/paccionesawyer/sudokuSolver-CSP
 
 CNN: https://github.com/rg1990/cv-sudoku-solver
+https://pyimagesearch.com/2020/08/10/opencv-sudoku-solver-and-ocr/
 
 Run Combine File:
 python sudoku_integrated_solver.py --image external1.jpg

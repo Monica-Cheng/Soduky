@@ -1,9 +1,14 @@
-
 import argparse
 import os
+import time
+import json
 import cv2
 import numpy as np
 import pytesseract
+
+def _ensure_dir(path: str):
+    """Create directory if it doesn't exist."""
+    os.makedirs(path, exist_ok=True)
 
 # Set Tesseract path (Windows)
 def _set_tesseract_cmd():
@@ -67,7 +72,6 @@ def _preprocess_cell(bgr, inner_crop):
     th = cv2.morphologyEx(th, cv2.MORPH_OPEN, k, iterations=1)
     return th
 
-
 # OCR a cell, return digit (or 0 if empty)
 def _ocr_digit(cell_gray_inv, min_ink):
     ink = (cell_gray_inv>0).mean()
@@ -83,8 +87,9 @@ def _ocr_digit(cell_gray_inv, min_ink):
             return int(ch)
     return 0
 
-#Main pipeline: detect board- warp -split- OCR- save txt
-def recognize(image_path, output_path, board_size, inner_crop, min_ink):
+
+# Core: recognize + metrics
+def recognize(image_path, board_size, inner_crop, min_ink):
     _set_tesseract_cmd()
     img = cv2.imread(image_path)
     if img is None:
@@ -110,20 +115,124 @@ def recognize(image_path, output_path, board_size, inner_crop, min_ink):
             d = _ocr_digit(cell_bin, min_ink)
             row.append(d)
         digits.append(row)
-    arr = np.array(digits, dtype=int)
-    np.savetxt(output_path, arr, fmt="%d")
-    print(arr)
-    print(output_path)
+    return np.array(digits, dtype=int)
+
+def _load_ground_truth(gt_path: str) -> np.ndarray:
+    """
+    Load ground truth Sudoku as 9x9 integers.
+    Accepts whitespace or comma separated plain text.
+    """
+    if gt_path is None:
+        return None
+    if not os.path.exists(gt_path):
+        raise FileNotFoundError(f"Ground truth file not found: {gt_path}")
+    # Try reading as ints loosely
+    with open(gt_path, "r", encoding="utf-8") as f:
+        lines = [ln.strip() for ln in f if ln.strip()]
+    vals = []
+    for ln in lines:
+        parts = [p for p in ln.replace(",", " ").split() if p]
+        row = [int(p) for p in parts]
+        vals.append(row)
+    arr = np.array(vals, dtype=int)
+    if arr.shape != (9,9):
+        raise ValueError(f"Ground truth must be 9x9, got {arr.shape}")
+    return arr
+
+def _compute_accuracy(pred: np.ndarray, gt: np.ndarray):
+    """
+    Returns:
+      - cell_accuracy: correct cells / 81 (float 0~1)
+      - filled_accuracy: correct among gt>0 cells (float 0~1)
+      - num_correct, num_total, num_filled
+    """
+    if gt is None:
+        return None
+    if pred.shape != gt.shape:
+        raise ValueError(f"Shape mismatch: pred {pred.shape} vs gt {gt.shape}")
+    total = pred.size
+    correct = int((pred == gt).sum())
+    mask_filled = (gt > 0)
+    filled_total = int(mask_filled.sum())
+    filled_correct = int((pred[mask_filled] == gt[mask_filled]).sum()) if filled_total > 0 else 0
+    return {
+        "cell_accuracy": correct / total,
+        "filled_accuracy": (filled_correct / filled_total) if filled_total > 0 else None,
+        "num_correct": correct,
+        "num_total": total,
+        "num_filled": filled_total,
+        "num_filled_correct": filled_correct
+    }
+
+def run_and_log(image_path, out_dir, out_name, board_size, inner_crop, min_ink, gt_path=None):
+    _ensure_dir(out_dir)
+
+    # 1) Run with timer
+    t0 = time.perf_counter()
+    pred = recognize(image_path, board_size, inner_crop, min_ink)
+    elapsed = time.perf_counter() - t0
+
+    # 2) Save recognized grid
+    out_txt = os.path.join(out_dir, f"{out_name}.txt")
+    np.savetxt(out_txt, pred, fmt="%d")
+
+    # 3) Accuracy (optional)
+    gt = _load_ground_truth(gt_path) if gt_path else None
+    acc = _compute_accuracy(pred, gt) if gt is not None else None
+
+    # 4) Write metrics sidecar files
+    metrics = {
+        "image": image_path,
+        "output_txt": out_txt,
+        "runtime_seconds": elapsed,
+        "board_size": board_size,
+        "inner_crop": inner_crop,
+        "min_ink": min_ink,
+        "has_ground_truth": bool(gt is not None),
+        "metrics": acc
+    }
+    out_json = os.path.join(out_dir, f"{out_name}.metrics.json")
+    with open(out_json, "w", encoding="utf-8") as f:
+        json.dump(metrics, f, indent=2)
+
+    # Also a short human-readable summary
+    out_summary = os.path.join(out_dir, f"{out_name}.metrics.txt")
+    with open(out_summary, "w", encoding="utf-8") as f:
+        f.write(f"Image: {image_path}\n")
+        f.write(f"Output TXT: {out_txt}\n")
+        f.write(f"Runtime: {elapsed:.4f} s\n")
+        if acc is not None:
+            f.write(f"Accuracy (cells): {acc['num_correct']}/{acc['num_total']} = {acc['cell_accuracy']*100:.2f}%\n")
+            f.write("Accuracy: (no ground truth provided)\n")
+
+    # 5) Print brief console output
+    print(pred)
+    print(f"[Saved] {out_txt}")
+    print(f"[Runtime] {elapsed:.4f} s")
+    if acc is not None:
+        print(f"[Accuracy] cells: {acc['cell_accuracy']*100:.2f}%  ({acc['num_correct']}/{acc['num_total']})")
+        
 
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument("--image", required=True)
-    p.add_argument("--out", default="recognized_sudoku.txt")
+    p.add_argument("--image", required=True, help="Path to Sudoku image")
+    p.add_argument("--out_dir", default="output", help="Folder to save outputs")
+    p.add_argument("--out_name", default="recognized_sudoku", help="Base name for outputs (without extension)")
     p.add_argument("--board_size", type=int, default=900)
     p.add_argument("--inner_crop", type=float, default=0.22)
     p.add_argument("--min_ink", type=float, default=0.03)
+    p.add_argument("--gt", default=None, help="Optional path to 9x9 ground-truth TXT for accuracy")
     args = p.parse_args()
-    recognize(args.image, args.out, args.board_size, args.inner_crop, args.min_ink)
+
+    run_and_log(
+        image_path=args.image,
+        out_dir=args.out_dir,
+        out_name=args.out_name,
+        board_size=args.board_size,
+        inner_crop=args.inner_crop,
+        min_ink=args.min_ink,
+        gt_path=args.gt
+    )
 
 if __name__ == "__main__":
     main()
