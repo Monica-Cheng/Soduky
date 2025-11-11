@@ -10,7 +10,7 @@ python3 algo2_run.py easy.txt medium.txt hard.txt
 
 # Algorithm 3: AC-3 + FC + Heuristics (Jason)
 
-python3 algo3_run.py easy.txt medium.txt hard.txt
+python3 algo2_run.py easy.txt medium.txt hard.txt
 
 # Algorithm 4: MIN CONFLICT (CINDY)
 

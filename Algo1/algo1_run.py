@@ -1,17 +1,3 @@
-#!/usr/bin/env python3
-"""
-sudoku_runner_bruteforce.py
-
-Wrapper for Brute-Force Backtracking Sudoku Solver
-
-Original source logic preserved.
-Added:
-✔ Runtime, memory, nodes, backtracks tracking
-✔ Timeout (cross-platform with threading.Timer)
-✔ CSV logging and summary tables
-✔ Compatible with previous AC3 / FC+MRV runners
-"""
-
 import sys
 import os
 import time
@@ -139,7 +125,7 @@ def solve_single_puzzle(puzzle_string: str, show_output=True):
     try:
         success = sudo_brute_force(counters)
     except Exception as e:
-        print(f"⚠️ ERROR: {e}")
+        print(f" ERROR: {e}")
         success = False
     finally:
         timer.cancel()
@@ -154,7 +140,7 @@ def solve_single_puzzle(puzzle_string: str, show_output=True):
     if timeout_occurred:
         success = False
         if show_output:
-            print(f"\n⏱️ TIMEOUT after 30 seconds")
+            print(f"\n TIMEOUT after 30 seconds")
 
     solved_string = "".join(values[s] for s in squares)
     if show_output and success:
@@ -183,7 +169,7 @@ def print_puzzle(values):
 def read_puzzles_from_file(filename):
     puzzles = []
     if not os.path.isfile(filename):
-        print(f"⚠️ File not found: {filename}")
+        print(f" File not found: {filename}")
         return puzzles
     with open(filename, "r", encoding="utf-8") as f:
         digits = "".join(ch for ch in f.read() if ch.isdigit())

@@ -41,7 +41,7 @@ def timeout_handler():
     """Trigger when timer expires"""
     global timeout_occurred
     timeout_occurred = True
-    print(f"\n⏱️ TIMEOUT: Exceeded {TIMEOUT_SECONDS} seconds")
+    print(f"\n TIMEOUT: Exceeded {TIMEOUT_SECONDS} seconds")
 
 
 # ===============================================================
@@ -153,12 +153,12 @@ def solve_single_puzzle(puzzle_string: str, show_output: bool = True) -> Tuple:
     except TimeoutError:
         success = False
         if show_output:
-            print(f"\n⏱️ TIMEOUT: Exceeded {TIMEOUT_SECONDS} seconds")
+            print(f"\n TIMEOUT: Exceeded {TIMEOUT_SECONDS} seconds")
 
     except Exception as e:
         success = False
         if show_output:
-            print(f"\n⚠️ ERROR: {str(e)}")
+            print(f"\n ERROR: {str(e)}")
             import traceback
             traceback.print_exc()
     finally:
@@ -310,7 +310,7 @@ def solve_all_puzzles(filenames: List[str]) -> None:
                     "Backtracks": 0,
                     "Success": False,
                     "TimedOut": False,
-                    "Remarks": "⚠️ Unexpected error"
+                    "Remarks": "Unexpected error"
                 }
                 log_to_csv(row, log_file)
                 all_results.append(row)
