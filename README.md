@@ -49,3 +49,23 @@ https://pyimagesearch.com/2020/08/10/opencv-sudoku-solver-and-ocr/
 
 Run Combine File:
 python sudoku_integrated_solver.py --image external1.jpg
+
+1. Clone all the codes to your IDE
+   Command: git clone https://github.com/Monica-Cheng/Soduky
+
+![Image description/Alt text](/Soduky/doc_image/image.png)
+
+2. Create virtual environment with python 3.10
+   Commands:
+   a. Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+   b. py -3.10 -m venv venv
+   c. venv\Scripts\activate
+
+![Image description/Alt text](/Soduky/doc_image/image2.png)
+
+3. Set up dependencies
+   Commands: pip install -r requirements.txt
+
+4. Run the main python script and passes your image as input
+   Commands: python sudoku_integrated_solver.py --image external1.jpg
+   Output:
