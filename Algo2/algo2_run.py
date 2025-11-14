@@ -3,7 +3,6 @@ import os
 import time
 import csv
 import tracemalloc
-import threading
 from tabulate import tabulate
 from typing import List, Dict, Tuple
 from io import StringIO
@@ -11,18 +10,6 @@ from io import StringIO
 # Import original modules
 from SudokuBoard import SudokuBoard
 from solver import forward_checking, minimum_remaining_values
-
-TIMEOUT_SECONDS = 30
-timeout_occurred = False
-
-
-# ===============================================================
-# Timeout utilities
-# ===============================================================
-def set_timeout_flag():
-    """Triggered when timer expires."""
-    global timeout_occurred
-    timeout_occurred = True
 
 
 # ===============================================================
@@ -32,9 +19,8 @@ def solve_single_puzzle(puzzle_string: str, show_output: bool = True) -> Tuple:
     """
     Solve using ORIGINAL Forward Checking + MRV implementation.
     Returns: (solution, runtime, memory_mb, nodes, backtracks, success, timed_out)
+    timed_out is always False in this implementation.
     """
-    global timeout_occurred
-    timeout_occurred = False
 
     if len(puzzle_string) != 81:
         raise ValueError(f"Puzzle must be 81 characters, got {len(puzzle_string)}")
@@ -46,10 +32,6 @@ def solve_single_puzzle(puzzle_string: str, show_output: bool = True) -> Tuple:
 
     success = False
     solution = None
-
-    # Start timeout timer
-    timer = threading.Timer(TIMEOUT_SECONDS, set_timeout_flag)
-    timer.start()
 
     # Start tracking
     tracemalloc.start()
@@ -66,11 +48,7 @@ def solve_single_puzzle(puzzle_string: str, show_output: bool = True) -> Tuple:
         # Solve using original function
         success = forward_checking(puzzle, minimum_remaining_values)
 
-        # Stop timer
-        timer.cancel()
-
-        # If solved before timeout
-        if not timeout_occurred and success:
+        if success:
             solution = board_to_string(puzzle)
             if show_output:
                 print("\nSOLVED PUZZLE:")
@@ -82,8 +60,6 @@ def solve_single_puzzle(puzzle_string: str, show_output: bool = True) -> Tuple:
             print(f"\n ERROR: {str(e)}")
             import traceback
             traceback.print_exc()
-    finally:
-        timer.cancel()
 
     # Stop tracking
     end_time = time.perf_counter()
@@ -97,13 +73,8 @@ def solve_single_puzzle(puzzle_string: str, show_output: bool = True) -> Tuple:
     nodes = getattr(puzzle, "unique_states", 0)
     backtracks = getattr(puzzle, "backtracks", 0)
 
-    # Timeout detection
-    if timeout_occurred:
-        success = False
-        if show_output:
-            print(f"\n TIMEOUT: Exceeded {TIMEOUT_SECONDS} seconds")
-
-    return solution, runtime, peak_mb, nodes, backtracks, success, timeout_occurred
+    # timed_out is always False here (no time-based cutoff)
+    return solution, runtime, peak_mb, nodes, backtracks, success, False
 
 
 # ===============================================================
@@ -144,7 +115,7 @@ def read_puzzles_from_file(filename: str) -> List[str]:
             print(f" {filename} has {len(digits_only)} digits, not multiple of 81")
         for i in range(0, len(digits_only), 81):
             if i + 81 <= len(digits_only):
-                puzzles.append(digits_only[i:i+81])
+                puzzles.append(digits_only[i:i + 81])
     return puzzles
 
 
@@ -170,7 +141,6 @@ def solve_all_puzzles(filenames: List[str]) -> None:
     print(f"\n{'='*70}")
     print("SUDOKU SOLVER - Backtracking + Forward Checking + MRV")
     print("Source: github.com/paccionesawyer/sudokuSolver-CSP")
-    print(f"Timeout: {TIMEOUT_SECONDS}s per puzzle")
     print(f"{'='*70}\n")
 
     log_file = "performance_log_fc_minimal.csv"
@@ -216,8 +186,6 @@ def solve_all_puzzles(filenames: List[str]) -> None:
 
                 if success:
                     print(f"✓ Solved in {runtime:.6f}s | Nodes: {nodes}, Backtracks: {backtracks}")
-                elif timed_out:
-                    print(f"⏱️ Timed out after {runtime:.6f}s | Nodes: {nodes}")
                 else:
                     print(f"✗ Failed after {runtime:.6f}s | Nodes: {nodes}, Backtracks: {backtracks}")
 
@@ -317,7 +285,6 @@ def solve_all_puzzles(filenames: List[str]) -> None:
     print(f"\n{'='*70}")
     print(f"Results saved to: {log_file}")
     print(f"Algorithm: Backtracking + Forward Checking + MRV")
-    print(f"Timeout: {TIMEOUT_SECONDS}s per puzzle")
     print(f"{'='*70}\n")
 
 

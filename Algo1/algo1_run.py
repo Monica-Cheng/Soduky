@@ -44,12 +44,6 @@ def sudosetup():
         peerlist = [units[unit[s]], lines[s[0]] + lines[s[1]]]
         peers[s] = set(p for p in [j for i in peerlist for j in i] if p != s)
 
-# ===============================================================
-# Timeout handler (threading-based)
-# ===============================================================
-def set_timeout_flag():
-    global timeout_occurred
-    timeout_occurred = True
 
 
 # ===============================================================
@@ -69,9 +63,7 @@ def sudo_validate():
 
 def sudo_brute_force(counters):
     """Recursive brute-force solver with node/backtrack counters."""
-    global timeout_occurred
-    if timeout_occurred:
-        return False
+
 
     if sudo_validate():
         return True
@@ -115,8 +107,7 @@ def solve_single_puzzle(puzzle_string: str, show_output=True):
         print_puzzle(values)
 
     counters = {"nodes": 0, "backtracks": 0}
-    timer = threading.Timer(30, set_timeout_flag)
-    timer.start()
+   
 
     tracemalloc.start()
     start = time.perf_counter()
@@ -127,8 +118,7 @@ def solve_single_puzzle(puzzle_string: str, show_output=True):
     except Exception as e:
         print(f" ERROR: {e}")
         success = False
-    finally:
-        timer.cancel()
+    
 
     end = time.perf_counter()
     current, peak = tracemalloc.get_traced_memory()
@@ -137,17 +127,14 @@ def solve_single_puzzle(puzzle_string: str, show_output=True):
     runtime = end - start
     memory_mb = peak / (1024 * 1024)
 
-    if timeout_occurred:
-        success = False
-        if show_output:
-            print(f"\n TIMEOUT after 30 seconds")
+    
 
     solved_string = "".join(values[s] for s in squares)
     if show_output and success:
         print("SOLVED PUZZLE:")
         print_puzzle(values)
 
-    return solved_string if success else None, runtime, memory_mb, counters["nodes"], counters["backtracks"], success, timeout_occurred
+    return solved_string if success else None, runtime, memory_mb, counters["nodes"], counters["backtracks"], success, False
 
 
 # ===============================================================
@@ -183,7 +170,7 @@ def log_to_csv(row: Dict, csv_filename="performance_log_bruteforce.csv"):
     file_exists = os.path.isfile(csv_filename)
     with open(csv_filename, "a", newline="", encoding="utf-8") as f:
         fieldnames = ["File", "PuzzleIndex", "GlobalIndex", "Runtime(s)",
-                      "Memory(MB)", "NodesVisited", "Backtracks", "Success", "TimedOut"]
+                      "Memory(MB)", "NodesVisited", "Backtracks", "Success"]
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         if not file_exists:
             writer.writeheader()
@@ -194,7 +181,6 @@ def log_to_csv(row: Dict, csv_filename="performance_log_bruteforce.csv"):
 def solve_all_puzzles(filenames: List[str]):
     print(f"\n{'='*70}")
     print("SUDOKU SOLVER - Brute Force Backtracking")
-    print(f"Timeout: 30 seconds per puzzle")
     print(f"{'='*70}\n")
 
     log_file = "performance_log_bruteforce.csv"
@@ -227,7 +213,6 @@ def solve_all_puzzles(filenames: List[str]):
                 "NodesVisited": nodes,
                 "Backtracks": backs,
                 "Success": success,
-                "TimedOut": timeout
             }
             log_to_csv(row, log_file)
             all_results.append(row)
@@ -243,7 +228,7 @@ def solve_all_puzzles(filenames: List[str]):
 
     table = []
     for r in all_results:
-        status = "✓" if r["Success"] else ("⏱️" if r["TimedOut"] else "✗")
+        status = "✓" if r["Success"] else "✗"
         table.append([
             r["GlobalIndex"], r["File"], r["PuzzleIndex"], r["Runtime(s)"],
             r["Memory(MB)"], r["NodesVisited"], r["Backtracks"], status
@@ -269,8 +254,7 @@ def solve_all_puzzles(filenames: List[str]):
             files[fname]["runtime"] += float(r["Runtime(s)"])
             files[fname]["nodes"] += int(r["NodesVisited"])
             files[fname]["backs"] += int(r["Backtracks"])
-        if r["TimedOut"]:
-            files[fname]["timed"] += 1
+        
 
     stats = []
     for fname, s in files.items():
@@ -278,11 +262,12 @@ def solve_all_puzzles(filenames: List[str]):
         avg_runtime = s["runtime"] / s["solved"] if s["solved"] > 0 else 0
         avg_nodes = s["nodes"] / s["solved"] if s["solved"] > 0 else 0
         avg_back = s["backs"] / s["solved"] if s["solved"] > 0 else 0
-        stats.append([fname, f"{s['solved']}/{s['total']}", f"{acc:.1f}%", s["timed"],
-                      f"{avg_runtime:.6f}", f"{avg_nodes:.0f}", f"{avg_back:.0f}"])
+        stats.append([fname, f"{s['solved']}/{s['total']}", f"{acc:.1f}%",
+              f"{avg_runtime:.6f}", f"{avg_nodes:.0f}", f"{avg_back:.0f}"])
+
 
     print(tabulate(stats,
-                   headers=["File", "Solved", "Accuracy", "TimedOut",
+                   headers=["File", "Solved", "Accuracy",
                             "Avg Runtime(s)", "Avg Nodes", "Avg Backtracks"],
                    tablefmt="grid"))
 
@@ -293,12 +278,12 @@ def solve_all_puzzles(filenames: List[str]):
 
     total = len(all_results)
     solved = sum(1 for r in all_results if r["Success"])
-    timed = sum(1 for r in all_results if r["TimedOut"])
+    timed = 0
     acc = (solved / total * 100) if total else 0
     overall = [
         ["Total Puzzles", total],
         ["Solved", solved],
-        ["Failed", total - solved - timed],
+        ["Failed", total - solved],
         ["Timed Out", timed],
         ["Overall Accuracy", f"{acc:.2f}%"]
     ]
@@ -306,7 +291,6 @@ def solve_all_puzzles(filenames: List[str]):
     print(f"\n{'='*70}")
     print(f"Results saved to: {log_file}")
     print(f"Algorithm: Brute Force Backtracking")
-    print(f"Timeout: 30s per puzzle")
     print(f"{'='*70}\n")
 
 

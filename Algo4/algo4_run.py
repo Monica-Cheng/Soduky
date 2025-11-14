@@ -5,8 +5,7 @@ sudoku_runner_min_conflict_cleaned.py
 Minimum Conflict Local Search Algorithm for Sudoku
 Algorithm: Min-Conflicts with Row-Swap Repair
 
-ORIGINAL CODE LOGIC UNCHANGED
-Only modifications: UTF-8 encoding fixes and CSV format consistency
+This version runs until a solution is found or MAX_STEPS is reached.
 """
 
 import sys
@@ -16,26 +15,15 @@ import csv
 import tracemalloc
 import random
 import copy
-import threading
 from tabulate import tabulate
 from typing import List, Dict, Tuple
 
-TIMEOUT_SECONDS = 30
 MAX_STEPS = 200000
 N = 9
-timeout_occurred = False
 
 
 # ============================================================
-# Timeout handling (cross-platform using threading)
-# ============================================================
-def set_timeout_flag():
-    global timeout_occurred
-    timeout_occurred = True
-
-
-# ============================================================
-# ORIGINAL Min-Conflicts Algorithm (UNCHANGED)
+# Min-Conflicts Algorithm
 # ============================================================
 def get_conflicts(board, row, col, val):
     """Count conflicts if cell (row,col) had value val."""
@@ -91,23 +79,20 @@ def total_conflicts_for_swap(board, r1, c1, r2, c2):
 
 def min_conflicts_solver(puzzle, max_steps=MAX_STEPS):
     """
-    ORIGINAL Min-Conflicts solver with row-swap repair.
+    Min-Conflicts solver with row-swap repair.
     Returns: (solution_board, steps_taken)
     """
     fixed = [[puzzle[i][j] != 0 for j in range(N)] for i in range(N)]
     board = random_initial_board(puzzle)
 
     for step in range(max_steps):
-        if timeout_occurred:
-            break
-
         conflicted = conflicted_cells(board, fixed)
         if not conflicted:
             return board, step
 
         # Pick random conflicted cell
         row, col = random.choice(conflicted)
-        
+
         # Find best swap within same row
         best_swap, best_conf = None, None
         for j in range(N):
@@ -148,22 +133,22 @@ def is_valid_solution(board):
     # Check boxes
     for br in range(3):
         for bc in range(3):
-            vals = [board[r][c] for r in range(br*3, br*3+3)
-                    for c in range(bc*3, bc*3+3)]
+            vals = [board[r][c] for r in range(br * 3, br * 3 + 3)
+                    for c in range(bc * 3, bc * 3 + 3)]
             if set(vals) != set(range(1, 10)):
                 return False
     return True
 
 
 # ============================================================
-# Helper Functions (Minor formatting fixes only)
+# Helper Functions
 # ============================================================
 def parse_puzzle_string(puzzle_string: str):
     """Convert 81-char string to 9x9 board."""
     if len(puzzle_string) != 81:
         raise ValueError("Puzzle must be 81 characters.")
     nums = [int(ch) for ch in puzzle_string]
-    return [nums[i:i+9] for i in range(0, 81, 9)]
+    return [nums[i:i + 9] for i in range(0, 81, 9)]
 
 
 def board_to_string(board):
@@ -187,15 +172,14 @@ def print_puzzle(puzzle_string: str):
 
 
 # ============================================================
-# Main Puzzle Runner (cross-platform timeout)
+# Main Puzzle Runner
 # ============================================================
 def solve_single_puzzle(puzzle_string: str, show_output=True):
     """
-    Solve using Min-Conflicts algorithm with timeout.
+    Solve using Min-Conflicts local search.
     Returns: (solution, runtime, memory_mb, steps, backtracks, success, timed_out)
+    timed_out is always False in this implementation.
     """
-    global timeout_occurred
-    timeout_occurred = False
 
     if show_output:
         print("ORIGINAL PUZZLE:")
@@ -206,10 +190,6 @@ def solve_single_puzzle(puzzle_string: str, show_output=True):
     solution_board = None
     steps = 0
 
-    # Start timeout timer
-    timer = threading.Timer(TIMEOUT_SECONDS, set_timeout_flag)
-    timer.start()
-
     # Start tracking
     tracemalloc.start()
     start = time.perf_counter()
@@ -217,16 +197,14 @@ def solve_single_puzzle(puzzle_string: str, show_output=True):
     try:
         if show_output:
             print("\nSolving with Min-Conflicts Local Search...")
-        
+
         solution_board, steps = min_conflicts_solver(puzzle, MAX_STEPS)
         success = is_valid_solution(solution_board)
-        
+
     except Exception as e:
         if show_output:
             print(f"\nWARNING: ERROR: {e}")
         success = False
-    finally:
-        timer.cancel()
 
     # Stop tracking
     end = time.perf_counter()
@@ -236,22 +214,16 @@ def solve_single_puzzle(puzzle_string: str, show_output=True):
     runtime = end - start
     memory_mb = peak / (1024 * 1024)
 
-    # Handle timeout
-    if timeout_occurred:
-        success = False
-        if show_output:
-            print(f"\nTIMEOUT: Exceeded {TIMEOUT_SECONDS} seconds")
-
     # Show results
     if show_output and success:
         print("\nSOLVED PUZZLE:")
         print_puzzle(board_to_string(solution_board))
-    elif show_output and not success and not timeout_occurred:
+    elif show_output and not success:
         print("\nWARNING: Max iterations reached without valid solution")
 
     return (
         board_to_string(solution_board) if success else None,
-        runtime, memory_mb, steps, 0, success, timeout_occurred
+        runtime, memory_mb, steps, 0, success, False  # timed_out=False
     )
 
 
@@ -264,12 +236,12 @@ def read_puzzles_from_file(filename):
     if not os.path.isfile(filename):
         print(f"Warning: File not found: {filename}")
         return puzzles
-    
+
     with open(filename, "r", encoding="utf-8") as f:
         digits = "".join(ch for ch in f.read() if ch.isdigit())
         for i in range(0, len(digits), 81):
             if i + 81 <= len(digits):
-                puzzles.append(digits[i:i+81])
+                puzzles.append(digits[i:i + 81])
     return puzzles
 
 
@@ -288,12 +260,11 @@ def log_to_csv(row: Dict, csv_filename="performance_log_min_conflict.csv"):
 
 def solve_all_puzzles(filenames: List[str]):
     """Main function to solve all puzzles from provided files."""
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print("SUDOKU SOLVER - Minimum Conflict Local Search")
     print("Algorithm: Min-Conflicts with Row-Swap Repair")
-    print(f"Timeout: {TIMEOUT_SECONDS} seconds per puzzle")
     print(f"Max Steps: {MAX_STEPS} per puzzle")
-    print(f"{'='*70}\n")
+    print(f"{'=' * 70}\n")
 
     log_file = "performance_log_min_conflict.csv"
     if os.path.exists(log_file):
@@ -304,22 +275,22 @@ def solve_all_puzzles(filenames: List[str]):
     global_index = 0
 
     for filename in filenames:
-        print(f"\n{'='*70}")
+        print(f"\n{'=' * 70}")
         print(f"Reading file: {filename}")
-        print(f"{'='*70}")
-        
+        print(f"{'=' * 70}")
+
         puzzles = read_puzzles_from_file(filename)
         if not puzzles:
             print(f"No puzzles found in {filename}")
             continue
-        
+
         print(f"Found {len(puzzles)} puzzle(s) in {filename}\n")
 
         for idx, puzzle in enumerate(puzzles, 1):
             global_index += 1
-            print(f"\n{'='*70}")
+            print(f"\n{'=' * 70}")
             print(f"File: {filename} | Puzzle #{idx} | Global #{global_index}")
-            print(f"{'='*70}")
+            print(f"{'=' * 70}")
 
             try:
                 solved, runtime, mem, steps, backs, success, timeout = \
@@ -334,26 +305,23 @@ def solve_all_puzzles(filenames: List[str]):
                     "NodesVisited": steps,
                     "Backtracks": backs,
                     "Success": success,
-                    "TimedOut": timeout
+                    "TimedOut": False
                 }
                 log_to_csv(row, log_file)
                 all_results.append(row)
-                
+
                 if success:
                     print(f"\n✓ Solved in {runtime:.6f}s")
                     print(f"  Steps: {steps}, Memory: {mem:.6f} MB")
-                elif timeout:
-                    print(f"\n⏱️  Timed out after {runtime:.6f}s")
-                    print(f"  Steps attempted: {steps}")
                 else:
                     print(f"\n✗ Failed after {runtime:.6f}s")
                     print(f"  Steps attempted: {steps} (max: {MAX_STEPS})")
-                    
+
             except Exception as e:
                 print(f"\n✗ ERROR: {str(e)}")
                 import traceback
                 traceback.print_exc()
-                
+
                 row = {
                     "File": os.path.basename(filename),
                     "PuzzleIndex": idx,
@@ -369,9 +337,9 @@ def solve_all_puzzles(filenames: List[str]):
                 all_results.append(row)
 
     # Summary Report
-    print(f"\n\n{'='*70}")
+    print(f"\n\n{'=' * 70}")
     print("SUMMARY REPORT")
-    print(f"{'='*70}\n")
+    print(f"{'=' * 70}\n")
 
     if not all_results:
         print("No puzzles processed.")
@@ -379,21 +347,21 @@ def solve_all_puzzles(filenames: List[str]):
 
     table = []
     for r in all_results:
-        status = "✓" if r["Success"] else ("⏱️" if r["TimedOut"] else "✗")
+        status = "✓" if r["Success"] else "✗"
         table.append([
             r["GlobalIndex"], r["File"], r["PuzzleIndex"], r["Runtime(s)"],
             r["Memory(MB)"], r["NodesVisited"], r["Backtracks"], status
         ])
-    
+
     print(tabulate(table,
                    headers=["Global#", "File", "Puzzle#", "Runtime(s)", "Memory(MB)",
                             "Steps", "Backtracks", "Status"],
                    tablefmt="grid"))
 
     # Statistics by Difficulty
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print("STATISTICS BY DIFFICULTY (with Accuracy)")
-    print(f"{'='*70}\n")
+    print(f"{'=' * 70}\n")
 
     files = {}
     for r in all_results:
@@ -425,15 +393,15 @@ def solve_all_puzzles(filenames: List[str]):
                    tablefmt="grid"))
 
     # Overall Statistics
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print("OVERALL STATISTICS")
-    print(f"{'='*70}\n")
+    print(f"{'=' * 70}\n")
 
     total = len(all_results)
     solved = sum(1 for r in all_results if r["Success"])
     timed = sum(1 for r in all_results if r["TimedOut"])
     acc = (solved / total * 100) if total else 0
-    
+
     overall = [
         ["Total Puzzles", total],
         ["Solved", solved],
@@ -442,12 +410,12 @@ def solve_all_puzzles(filenames: List[str]):
         ["Overall Accuracy", f"{acc:.2f}%"]
     ]
     print(tabulate(overall, tablefmt="simple"))
-    
-    print(f"\n{'='*70}")
+
+    print(f"\n{'=' * 70}")
     print(f"Results saved to: {log_file}")
     print(f"Algorithm: Minimum Conflict Local Search")
     print(f"Note: 'NodesVisited' = iterations/steps, 'Backtracks' always 0")
-    print(f"{'='*70}\n")
+    print(f"{'=' * 70}\n")
 
 
 # ============================================================

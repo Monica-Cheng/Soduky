@@ -28,11 +28,11 @@ python sudoku_main.py --img_fpath "data/sudoku_images/2.jpg" --output_path "reco
 
 python3 sudoku-ocr-Tesseract.py --image images/test.jpg --out recognized_sudoku.txt
 
-# Git Hub sources
+# Git Hub sources and other resources
 
-mon: https://github.com/CharKeaney/sudoku-solver/blob/master/sudosolver.py
+Algorithim 1: https://github.com/CharKeaney/sudoku-solver/blob/master/sudosolver.py
 
-cindy:
+Algorithim 4:
 
 1. https://doi.org/10.1016/0004-3702(92)90007-K
 
@@ -40,9 +40,9 @@ cindy:
 
 3. https://github.com/kushjain/Min-Conflicts
 
-Jason: https://github.com/stressGC/Python-AC3-Backtracking-CSP-Sudoku-Solver/tree/master
+Algorithim 3: https://github.com/stressGC/Python-AC3-Backtracking-CSP-Sudoku-Solver/tree/master
 
-Jas2: https://github.com/paccionesawyer/sudokuSolver-CSP
+Algorithim 2: https://github.com/paccionesawyer/sudokuSolver-CSP
 
 CNN: https://github.com/rg1990/cv-sudoku-solver
 https://pyimagesearch.com/2020/08/10/opencv-sudoku-solver-and-ocr/
