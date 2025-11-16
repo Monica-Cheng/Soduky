@@ -6,16 +6,13 @@ import tracemalloc
 from tabulate import tabulate
 from typing import List, Dict
 
-# ===============================================================
-# Original Sudoku setup
-# ===============================================================
 ROWS = "ABCDEFGHI"
 COLS = "123456789"
 DIGITS = COLS
 squares = [r + c for r in ROWS for c in COLS]
 values = {}
 
-# Precomputed peers, lines, and units
+# Sudosetup function builds structure
 def sudosetup():
     global units, unit, lines, peers
     unitrows = []
@@ -42,10 +39,7 @@ def sudosetup():
         peerlist = [units[unit[s]], lines[s[0]] + lines[s[1]]]
         peers[s] = set(p for p in [j for i in peerlist for j in i] if p != s)
 
-
-# ===============================================================
 # Sudoku validation & brute-force solving
-# ===============================================================
 def sudo_validate():
     if "0" in values.values():
         return False
@@ -85,10 +79,7 @@ def sudo_brute_force(counters):
     counters["backtracks"] += 1
     return False
 
-
-# ===============================================================
 # Single puzzle solver
-# ===============================================================
 def solve_single_puzzle(puzzle_string: str, show_output=True):
     global values
     if len(puzzle_string) != 81:
@@ -125,7 +116,6 @@ def solve_single_puzzle(puzzle_string: str, show_output=True):
         print("SOLVED PUZZLE:")
         print_puzzle(values)
 
-    # TimedOut is always False now (no timeout mechanism)
     return (
         solved_string if success else None,
         runtime,
@@ -136,10 +126,7 @@ def solve_single_puzzle(puzzle_string: str, show_output=True):
         False,
     )
 
-
-# ===============================================================
-# Print Sudoku nicely
-# ===============================================================
+# Print Sudoku
 def print_puzzle(values):
     print()
     for r in range(9):
@@ -149,10 +136,7 @@ def print_puzzle(values):
             print("-" * 21)
     print()
 
-
-# ===============================================================
 # CSV + batch solving
-# ===============================================================
 def read_puzzles_from_file(filename):
     puzzles = []
     if not os.path.isfile(filename):
@@ -181,7 +165,6 @@ def log_to_csv(row: Dict, csv_filename="performance_log_bruteforce.csv"):
 def solve_all_puzzles(filenames: List[str]):
     print(f"\n{'='*70}")
     print("SUDOKU SOLVER - Brute Force Backtracking")
-    print("Timeout: DISABLED (no time limit)")
     print(f"{'='*70}\n")
 
     log_file = "performance_log_bruteforce.csv"
@@ -216,12 +199,12 @@ def solve_all_puzzles(filenames: List[str]):
                 "NodesVisited": nodes,
                 "Backtracks": backs,
                 "Success": success,
-                "TimedOut": timeout,  # always False
+                "TimedOut": timeout, 
             }
             log_to_csv(row, log_file)
             all_results.append(row)
 
-    # Summary
+    # Summary Parts
     print(f"\n{'='*70}")
     print("SUMMARY REPORT")
     print(f"{'='*70}\n")
@@ -244,7 +227,7 @@ def solve_all_puzzles(filenames: List[str]):
         tablefmt="grid"
     ))
 
-    # Statistics by difficulty (NO TimedOut column)
+    # Statistics by difficulty 
     print(f"\n{'='*70}")
     print("STATISTICS BY DIFFICULTY (with Accuracy)")
     print(f"{'='*70}\n")
@@ -280,7 +263,7 @@ def solve_all_puzzles(filenames: List[str]):
         tablefmt="grid"
     ))
 
-    # Overall stats (NO 'Timed Out' row)
+    # Overall stats
     print(f"\n{'='*70}")
     print("OVERALL STATISTICS")
     print(f"{'='*70}\n")
@@ -297,16 +280,12 @@ def solve_all_puzzles(filenames: List[str]):
     print(tabulate(overall, tablefmt="simple"))
     print(f"\n{'='*70}")
     print(f"Results saved to: {log_file}")
-    print(f"Algorithm: Brute Force Backtracking (NO TIMEOUT)")
+    print(f"Algorithm: Brute Force Backtracking")
     print(f"{'='*70}\n")
 
-
-# ===============================================================
-# Entry Point
-# ===============================================================
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python sudoku_runner_bruteforce.py easy.txt medium.txt hard.txt")
+        print("Usage: python algo1_run.py easy.txt medium.txt hard.txt")
         sys.exit(1)
 
     sudosetup()

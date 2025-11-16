@@ -8,10 +8,7 @@ from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropou
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.datasets import mnist
 
-
-# ============================================================
 # 1️ Load MNIST (digits 1–9 only)
-# ============================================================
 def load_mnist_data():
     (x_train, y_train), (x_test, y_test) = mnist.load_data()
 
@@ -38,10 +35,7 @@ def load_mnist_data():
     print(f" Loaded MNIST digits: {x_train.shape[0]} train, {x_test.shape[0]} test")
     return x_train, y_train, x_test, y_test
 
-
-# ============================================================
 # 2️ Load FONT dataset (supports both “1–9” and “Sample002–010” folders)
-# ============================================================
 def load_font_data(data_dir="/content/cv-sudoku-solver/data/digit_images"):
     x, y = [], []
 
@@ -95,10 +89,7 @@ def load_font_data(data_dir="/content/cv-sudoku-solver/data/digit_images"):
     print(f" Total font digits loaded: {x.shape[0]}")
     return x, y
 
-
-# ============================================================
 # 3️ Build CNN
-# ============================================================
 def build_model():
     model = Sequential([
         Conv2D(32, (3, 3), activation="relu", input_shape=(28, 28, 1)),
@@ -113,10 +104,7 @@ def build_model():
     model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=["accuracy"])
     return model
 
-
-# ============================================================
 # 4️ Train and Save
-# ============================================================
 def train_model():
     x_train_m, y_train_m, x_test_m, y_test_m = load_mnist_data()
     x_font, y_font = load_font_data("/content/cv-sudoku-solver/data/digit_images")
@@ -150,8 +138,6 @@ def train_model():
     print(f"Model saved to {model_path}")
 
 
-# ============================================================
 # 5️ Run script
-# ============================================================
 if __name__ == "__main__":
     train_model()

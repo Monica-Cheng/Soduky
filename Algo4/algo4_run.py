@@ -1,13 +1,3 @@
-#!/usr/bin/env python3
-"""
-sudoku_runner_min_conflict_cleaned.py
-
-Minimum Conflict Local Search Algorithm for Sudoku
-- Tracks NodesVisited (steps)
-- Tracks Backtracks (fallback repairs)
-- Outputs summary tables IDENTICAL to Algo1/Algo2/Algo3
-"""
-
 import sys
 import os
 import time
@@ -21,19 +11,13 @@ from typing import List, Dict, Tuple
 MAX_STEPS = 200000
 N = 9
 
-
-# ============================================================
 # Metrics Tracker (same fields as Algo 1–3)
-# ============================================================
 class MetricsTracker:
     def __init__(self):
         self.nodes = 0
         self.backtracks = 0
 
-
-# ============================================================
 # Min-Conflicts Helper Functions
-# ============================================================
 def get_conflicts(board, row, col, val):
     conflicts = 0
     # Row
@@ -82,9 +66,7 @@ def total_conflicts_for_swap(board, r1, c1, r2, c2):
     return get_conflicts(board, r1, c1, v2) + get_conflicts(board, r2, c2, v1)
 
 
-# ============================================================
 # Min-Conflicts Solver (nodes + backtracks integrated)
-# ============================================================
 def min_conflicts_solver(puzzle, tracker, max_steps=MAX_STEPS):
     fixed = [[puzzle[i][j] != 0 for j in range(N)] for i in range(N)]
     board = random_initial_board(puzzle)
@@ -128,10 +110,7 @@ def min_conflicts_solver(puzzle, tracker, max_steps=MAX_STEPS):
 
     return board, max_steps
 
-
-# ============================================================
 # Utilities
-# ============================================================
 def parse_puzzle_string(p):
     return [list(map(int, p[i:i+9])) for i in range(0, 81, 9)]
 
@@ -176,10 +155,7 @@ def is_valid_solution(board):
                 return False
     return True
 
-
-# ============================================================
 # Solve a single puzzle
-# ============================================================
 def solve_single_puzzle(puzzle_string: str, show_output=True):
     if show_output:
         print("ORIGINAL PUZZLE:")
@@ -219,13 +195,10 @@ def solve_single_puzzle(puzzle_string: str, show_output=True):
         tracker.nodes,
         tracker.backtracks,
         success,
-        False,  # TimedOut is always False now (no timeout mechanism)
+        False, 
     )
 
-
-# ============================================================
 # File reader + CSV
-# ============================================================
 def read_puzzles_from_file(filename):
     puzzles = []
     with open(filename, "r", encoding="utf-8") as f:
@@ -250,10 +223,7 @@ def log_to_csv(row, csv_filename="performance_log_min_conflict.csv"):
             writer.writeheader()
         writer.writerow(row)
 
-
-# ============================================================
-# Solve ALL puzzles (FULL REPORT INCLUDED)
-# ============================================================
+# Solve ALL puzzles 
 def solve_all_puzzles(filenames: List[str]):
 
     print(f"\n{'='*70}")
@@ -297,15 +267,13 @@ def solve_all_puzzles(filenames: List[str]):
                 "NodesVisited": nodes,
                 "Backtracks": backs,
                 "Success": success,
-                "TimedOut": timed_out  # always False now
+                "TimedOut": timed_out 
             }
 
             log_to_csv(row, log_file)
             all_results.append(row)
 
-    # ========================================================
-    # SUMMARY REPORT (Per-puzzle)
-    # ========================================================
+    # SUMMARY REPORT 
     print(f"\n{'='*70}")
     print("SUMMARY REPORT")
     print(f"{'='*70}\n")
@@ -326,9 +294,7 @@ def solve_all_puzzles(filenames: List[str]):
         tablefmt="grid"
     ))
 
-    # ========================================================
-    # STATISTICS BY DIFFICULTY (NO TimedOut column)
-    # ========================================================
+    # STATISTICS BY DIFFICULTY 
     print(f"\n{'='*70}")
     print("STATISTICS BY DIFFICULTY (with Accuracy)")
     print(f"{'='*70}\n")
@@ -375,9 +341,7 @@ def solve_all_puzzles(filenames: List[str]):
         tablefmt="grid"
     ))
 
-    # ========================================================
-    # OVERALL STATISTICS (NO 'Timed Out' row)
-    # ========================================================
+    # OVERALL STATISTICS
     print(f"\n{'='*70}")
     print("OVERALL STATISTICS")
     print(f"{'='*70}\n")
@@ -396,15 +360,11 @@ def solve_all_puzzles(filenames: List[str]):
 
     print(f"\n{'='*70}")
     print(f"Results saved to: performance_log_min_conflict.csv")
-    print(f"Algorithm: Minimum Conflict Local Search (NO TIMEOUT)")
+    print(f"Algorithm: Minimum Conflict Local Search")
     print(f"{'='*70}\n")
 
-
-# ============================================================
-# Entry Point
-# ============================================================
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python3 sudoku_runner_min_conflict_cleaned.py easy.txt medium.txt hard.txt")
+        print("Usage: python3 algo4_run.py easy.txt medium.txt hard.txt")
         sys.exit(1)
     solve_all_puzzles(sys.argv[1:])
