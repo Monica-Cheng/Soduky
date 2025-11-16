@@ -1,18 +1,3 @@
-#!/usr/bin/env python3
-"""
-sudoku_integrated_solver.py
-
-Complete pipeline:
-1. Load Sudoku image
-2. Use CNN to detect and recognize digits
-3. Convert to 81-digit format
-4. Solve using AC-3 + Backtracking algorithm
-5. Display results
-
-Usage:
-    python sudoku_integrated_solver.py --image path/to/sudoku_image.jpg
-"""
-
 import os
 import sys
 import argparse
@@ -55,7 +40,6 @@ class IntegratedSudokuSolver:
         
         Args:
             model_path: Path to trained CNN model (.keras file)
-            timeout_seconds: Maximum time for solving
         """
         self.model_path = model_path
         self.timeout_seconds = timeout_seconds
@@ -69,7 +53,7 @@ class IntegratedSudokuSolver:
         if not os.path.exists(self.model_path):
             raise FileNotFoundError(f"Model not found: {self.model_path}")
         self.model = tf.keras.models.load_model(self.model_path)
-        print("✓ Model loaded successfully")
+        print("Model loaded successfully")
         
     def detect_and_recognize(self, image_path):
         """
@@ -81,7 +65,7 @@ class IntegratedSudokuSolver:
         Returns:
             tuple: (grid_array, original_image, board_image)
                 - grid_array: 9x9 numpy array of detected digits
-                - original_image: Original input image (RGB)
+                - original_image: Original input image
                 - board_image: Warped grid image
         """
         print(f"\n[2/5] Processing image: {image_path}")
@@ -96,17 +80,17 @@ class IntegratedSudokuSolver:
         print(f"  Image size: {img.shape[1]}x{img.shape[0]}")
         
         # Detect grid cells
-        print("  Detecting grid cells...")
+        print("Detecting grid cells...")
         cells, M, board_image = sutils.get_valid_cells_from_image(img)
-        print(f"  ✓ Found {len(cells)} cells")
+        print(f"Found {len(cells)} cells")
         
         # Recognize digits
-        print("  Recognizing digits with CNN...")
+        print("Recognizing digits with CNN")
         grid_array = sutils.get_predicted_sudoku_grid(self.model, cells)
         
         # Count recognized digits
         num_filled = np.count_nonzero(grid_array)
-        print(f"  ✓ Recognized {num_filled} digits")
+        print(f"Recognized {num_filled} digits")
         
         return grid_array, img, board_image
         
@@ -149,14 +133,14 @@ class IntegratedSudokuSolver:
             ac3_result = AC3(sudoku)
             
             if not ac3_result:
-                print("  ✗ AC-3 determined no solution exists")
+                print(" AC-3 determined no solution exists")
                 success = False
             elif sudoku.isFinished():
-                print("  ✓ AC-3 alone solved the puzzle!")
+                print("AC-3 alone solved the puzzle!")
                 success = True
             else:
                 # Phase 2: Backtracking
-                print("  [Phase 2] AC-3 reduced search space. Starting backtracking...")
+                print("[Phase 2] AC-3 reduced search space. Starting backtracking...")
                 
                 assignment = {}
                 for cell in sudoku.cells:
@@ -190,12 +174,12 @@ class IntegratedSudokuSolver:
         peak_mb = peak / (1024 * 1024)
         
         if success:
-            print(f"  ✓ Solved in {runtime:.4f}s")
-            print(f"    Nodes visited: {self.nodes}")
-            print(f"    Backtracks: {self.backtracks}")
-            print(f"    Memory used: {peak_mb:.2f} MB")
+            print(f"Solved in {runtime:.4f}s")
+            print(f"Nodes visited: {self.nodes}")
+            print(f"Backtracks: {self.backtracks}")
+            print(f"Memory used: {peak_mb:.2f} MB")
         else:
-            print(f"  ✗ Failed after {runtime:.4f}s")
+            print(f"Failed after {runtime:.4f}s")
             
         return solution, runtime, peak_mb, success
         
@@ -318,7 +302,7 @@ class IntegratedSudokuSolver:
         
     def solve_from_image(self, image_path, show_visualization=True):
         """
-        Complete pipeline: detect, recognize, and solve
+        Complete program: detect, recognize, and solve
         
         Args:
             image_path: Path to Sudoku image
@@ -374,7 +358,7 @@ class IntegratedSudokuSolver:
         print("\n" + "=" * 70)
         print("SUMMARY")
         print("=" * 70)
-        print(f"Status: {'✓ SOLVED' if success else '✗ FAILED'}")
+        print(f"Status: {'SOLVED' if success else 'FAILED'}")
         print(f"Runtime: {runtime:.4f}s")
         print(f"Memory: {memory_mb:.2f} MB")
         print(f"Nodes visited: {self.nodes}")
@@ -447,10 +431,10 @@ Examples:
         sys.exit(0 if results['success'] else 1)
         
     except FileNotFoundError as e:
-        print(f"\n✗ Error: {str(e)}")
+        print(f"\nError: {str(e)}")
         sys.exit(1)
     except Exception as e:
-        print(f"\n✗ Unexpected error: {str(e)}")
+        print(f"\nUnexpected error: {str(e)}")
         import traceback
         traceback.print_exc()
         sys.exit(1)
